@@ -1,0 +1,82 @@
+import { getLocale, getTranslations } from "next-intl/server";
+import { LandingPage } from "@/components/landing/LandingPage";
+
+export default async function LocalePage() {
+  const locale = await getLocale();
+  const t = await getTranslations("landing");
+
+  return (
+    <LandingPage
+      locale={locale}
+      copy={{
+        navCapabilities: t("navCapabilities"),
+        navHowItWorks: t("navHowItWorks"),
+        navAnalytics: t("navAnalytics"),
+        navSecurity: t("navSecurity"),
+        navLogin: t("navLogin"),
+        eyebrow: t("eyebrow"),
+        title: t("title"),
+        description: t("description"),
+        primaryCta: t("primaryCta"),
+        secondaryCta: t("secondaryCta"),
+        microProof: t("microProof"),
+        previewLabel: t("previewLabel"),
+        previewTitle: t("previewTitle"),
+        previewUpdated: t("previewUpdated"),
+        previewStatus: t("previewStatus"),
+        previewAssociation: t("previewAssociation"),
+        previewBeneficiary: t("previewBeneficiary"),
+        previewRegions: t("previewRegions"),
+        previewCategories: t("previewCategories"),
+        partnersKicker: t("partnersKicker"),
+        partnersTitle: t("partnersTitle"),
+        previewAnalytics: t("previewAnalytics"),
+        previewTracking: t("previewTracking"),
+        tabletTabOverview: t("tabletTabOverview"),
+        tabletTabBeneficiaries: t("tabletTabBeneficiaries"),
+        tabletTabGrowth: t("tabletTabGrowth"),
+        tabletLiveActivity: t("tabletLiveActivity"),
+        tabletRecentAction1: t("tabletRecentAction1"),
+        tabletRecentAction2: t("tabletRecentAction2"),
+        tabletRecentAction3: t("tabletRecentAction3"),
+        bentoEyebrow: t("bentoEyebrow"),
+        bentoTitle: t("bentoTitle"),
+        bentoDesc: t("bentoDesc"),
+        capabilitiesEyebrow: t("capabilitiesEyebrow"),
+        capabilitiesTitle: t("capabilitiesTitle"),
+        capabilitiesDescription: t("capabilitiesDescription"),
+        feature1Title: t("feature1Title"),
+        feature1Description: t("feature1Description"),
+        feature2Title: t("feature2Title"),
+        feature2Description: t("feature2Description"),
+        feature3Title: t("feature3Title"),
+        feature3Description: t("feature3Description"),
+        feature4Title: t("feature4Title"),
+        feature4Description: t("feature4Description"),
+        feature5Title: t("feature5Title"),
+        feature5Description: t("feature5Description"),
+        feature6Title: t("feature6Title"),
+        feature6Description: t("feature6Description"),
+        analyticsEyebrow: t("analyticsEyebrow"),
+        analyticsTitle: t("analyticsTitle"),
+        analyticsDesc: t("analyticsDesc"),
+        trustKicker: t("trustKicker"),
+        trustTitle: t("trustTitle"),
+        trust1: t("trust1"),
+        trust2: t("trust2"),
+        trust3: t("trust3"),
+        trust4: t("trust4"),
+        howItWorksEyebrow: t("howItWorksEyebrow"),
+        howItWorksTitle: t("howItWorksTitle"),
+        howItWorksDescription: t("howItWorksDescription"),
+        step1: t("step1"),
+        step2: t("step2"),
+        step3: t("step3"),
+        bottomCtaTitle: t("bottomCtaTitle"),
+        bottomCtaDescription: t("bottomCtaDescription"),
+        bottomCta: t("bottomCta"),
+        footer: t("footer"),
+      }}
+    />
+  );
+}

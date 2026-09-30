@@ -1,0 +1,49 @@
+{
+  "name": "moeen-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@types/nodemailer": "^8.0.1",
+    "@types/qrcode": "^1.5.6",
+    "bcrypt": "^6.0.0",
+    "exceljs": "^4.4.0",
+    "highcharts": "^13.0.0",
+    "highcharts-react-official": "^3.2.3",
+    "jose": "^6.2.3",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.9",
+    "next-intl": "^4.13.0",
+    "nodemailer": "^9.0.3",
+    "qrcode": "^1.5.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.10.0",
+    "sharp": "^0.35.3",
+    "sqids": "^0.3.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4",
+    "tsx": "^4.22.4",
+    "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  }
+}

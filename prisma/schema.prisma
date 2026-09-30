@@ -1,0 +1,521 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  password      String
+  name          String?
+  roleId        Int
+  role          Role         @relation(fields: [roleId], references: [id])
+  status        String       @default("active")
+  isArchived    Boolean      @default(false)
+  language      String       @default("ar")
+  darkMode      Boolean      @default(false)
+  imageId       Int?         @unique
+  image         Attachment?  @relation("UserAvatar", fields: [imageId], references: [id], onDelete: SetNull)
+  resetToken    String?
+  resetTokenExpiry DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relationships
+  associationId Int?
+  association   Association? @relation("AssociationMembers", fields: [associationId], references: [id], onDelete: SetNull)
+  managedAssociations Association[] @relation("AssociationManager")
+  marketerId    Int?
+  marketer      Marketer?    @relation(fields: [marketerId], references: [id], onDelete: SetNull)
+  beneficiaryId Int?
+  beneficiary   Beneficiary? @relation(fields: [beneficiaryId], references: [id], onDelete: SetNull)
+  permissions   UserPermission[]
+  auditLogs     AuditLog[]
+}
+
+enum RoleType {
+  superadmin
+  admin
+  user
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  nameAr      String?
+  type        RoleType         @default(user)
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Screen {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  nameAr          String?
+  path            String           @unique
+  permissions     RolePermission[]
+  userPermissions UserPermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model RolePermission {
+  id        Int      @id @default(autoincrement())
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  screenId  Int
+  screen    Screen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  actions   String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleId, screenId])
+}
+
+model Association {
+  id          Int                 @id @default(autoincrement())
+  name        String
+  manager     String              // المسؤول عن المنظمة
+  managerId   Int?
+  managerUser User?               @relation("AssociationManager", fields: [managerId], references: [id], onDelete: SetNull)
+  phone       String              // رقم التواصل
+  email       String              @unique // البريد الالكتروني
+  governorateId Int
+  governorate   Governorate       @relation(fields: [governorateId], references: [id])
+  cityId      Int
+  city        City                @relation(fields: [cityId], references: [id])
+  categoryId  Int
+  category    AssociationCategory @relation(fields: [categoryId], references: [id])
+  donationUrl String?             // رابط منصة التبرع
+  logoId      Int?                @unique // معرف المرفق (الشعار)
+  logo        Attachment?         @relation("AssociationLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  isActive    Boolean             @default(true)
+  isArchived  Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  users       User[]              @relation("AssociationMembers")
+  beneficiaries Beneficiary[]      @relation("AssociationBeneficiaries")
+  marketerAssociations MarketerAssociation[]
+}
+
+model AssociationCategory {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  nameAr       String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  associations Association[]
+}
+
+model Marketer {
+  id                     Int                   @id @default(autoincrement())
+  name                   String
+  type                   String                @default("employee") // employee, company, influencer, volunteer
+  email                  String?               @unique
+  phone                  String?
+  identityType           String?               // national_id, resident_id
+  identityNumber         String?
+  commercialRegistration String?
+  governorateId          Int?
+  governorate            Governorate?          @relation(fields: [governorateId], references: [id])
+  cityId                 Int?
+  city                   City?                 @relation(fields: [cityId], references: [id])
+  imageId                Int?                  @unique
+  image                  Attachment?           @relation("MarketerImage", fields: [imageId], references: [id], onDelete: SetNull)
+  contractAttachmentId   Int?                  @unique
+  contractAttachment     Attachment?           @relation("MarketerContract", fields: [contractAttachmentId], references: [id], onDelete: SetNull)
+  isActive               Boolean               @default(true)
+  isArchived             Boolean               @default(false)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  users                  User[]
+  bankAccounts           MarketerBankAccount[]
+  associations           MarketerAssociation[]
+  monthlyReports         MarketerMonthlyReport[]
+}
+
+model MarketerBankAccount {
+  id                Int      @id @default(autoincrement())
+  marketerId        Int
+  marketer          Marketer @relation(fields: [marketerId], references: [id], onDelete: Cascade)
+  bankName          String
+  accountHolderName String
+  accountNumber     String?
+  iban              String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model MarketerAssociation {
+  id            Int         @id @default(autoincrement())
+  marketerId    Int
+  marketer      Marketer    @relation(fields: [marketerId], references: [id], onDelete: Cascade)
+  associationId Int
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  phoneNumbers  String[]    @default([])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Beneficiary {
+  id        Int      @id @default(autoincrement())
+
+  // الجمعية (حقل إلزامي)
+  associationId Int
+  association   Association @relation("AssociationBeneficiaries", fields: [associationId], references: [id])
+
+  // البيانات الأساسية لرب الأسرة
+  fullName           String   // الاسم الرباعي
+  nationalId         String   @unique // رقم الهوية/الإقامة
+  birthDate          String   // تاريخ الميلاد (YYYY-MM-DD)
+  maritalStatus      String   // الحالة الاجتماعية
+  educationLevel     String   // المستوى التعليمي
+  healthStatus       String   // الحالة الصحية
+  diseaseType        String?  // نوع المرض
+  disabilityType     String?  // نوع الإعاقة
+  phone              String   // رقم الجوال
+  alternatePhone     String?  // جوال بديل
+  totalFamilyMembers Int?     // إجمالي عدد أفراد الأسرة
+  address            String   // العنوان الوطني
+  photoId            Int?            // صورة المستفيد (معرف المرفق)
+  photo              Attachment?     @relation("BeneficiaryPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  addressProofId     Int?            // إثبات العنوان (معرف المرفق)
+  addressProof       Attachment?     @relation("BeneficiaryAddressProof", fields: [addressProofId], references: [id], onDelete: SetNull)
+  researcherOpinion  String?         // رأي الباحث
+  dependentsOpinion  String?         // رأي الباحث في التابعين
+
+  // التابعين
+  dependents Dependent[]
+
+  // الوضع المالي - مصادر الدخل
+  salaryIncome        Float?  // راتب وظيفي/تقاعدي
+  socialSecurity      Float?  // الضمان الاجتماعي
+  citizenAccount      Float?  // حساب المواطن
+  comprehensiveRehab  Float?  // التأهيل الشامل
+  otherAssocSupport   Float?  // دعم جمعيات أخرى
+  livestockCount      Int?    // مواشي (العدد)
+  otherAssetTotal     Float?  // إجمالي دخل الأصول الأخرى
+  otherAssetDesc      String? // وصف الأصل الآخر
+  totalIncome         Float?  // إجمالي الدخل
+  // مصادر دخل أخرى (أصول/ممتلكات مدرة) — many-to-many
+  incomeAssets        IncomeAssetOnBeneficiary[]
+
+  // الالتزامات والمصروفات
+  rentAmount          Float?  // إيجار المنزل
+  electricityBill     Float?  // فاتورة الكهرباء
+  waterBill           Float?  // فاتورة الماء
+  internetBill        Float?  // فاتورة الإنترنت
+  phoneBill           Float?  // فاتورة الهاتف
+  gasBill             Float?  // فاتورة الغاز
+  medicalExpenses     Float?  // مصاريف طبية
+  transportExpenses   Float?  // مواصلات ونقل
+  foodExpenses        Float?  // مصاريف الأكل والشرب
+  // فواتير الخدمات — many-to-many (للاختيار فقط، القيم في الحقول أعلاه)
+  serviceBills        ServiceBillOnBeneficiary[]
+  debtMonthly         Float?  // ديون مجدولة (القسط الشهري)
+  debtReason          String? // سبب الدين
+  debtPeriod          String? // فترة السداد
+  debtAttachmentId    Int?    // مرفق إثبات الدين
+  debtAttachment      Attachment? @relation("BeneficiaryDebtAttachment", fields: [debtAttachmentId], references: [id], onDelete: SetNull)
+  totalExpenses       Float?  // إجمالي المصروفات
+  netIncome           Float?  // صافي الدخل
+  financialOpinion    String? // رأي الباحث في الوضع المالي
+
+  // البيئة والسكن
+  environmentType     String? // نوع البيئة
+  housingType         String? // نوع السكن
+  housingTenure       String? // حيازة السكن
+  housingOpinion      String? // رأي الباحث في البيئة
+
+  // الاحتياجات
+  needs               Json?   @default("{}")
+  needsOpinion        String? // رأي الباحث في الاحتياجات
+
+  // باقات التبرع
+  donationPackages    DonationPackage[]
+
+  // الخلاصة والاعتماد
+  finalRecommendation String? // التوصية النهائية
+  caseClassification  String? // تصنيف الحالة
+
+  // المرفقات والصور الميدانية
+  buildingPhotoId     Int?            // صورة خارجية للمبنى
+  buildingPhoto       Attachment?     @relation("BeneficiaryBuildingPhoto", fields: [buildingPhotoId], references: [id], onDelete: SetNull)
+  fieldPhotos         FieldPhoto[]
+
+  // Status & Archiving
+  isActive            Boolean         @default(true)
+  isArchived          Boolean         @default(false)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model Dependent {
+  id              Int      @id @default(autoincrement())
+  beneficiaryId   Int
+  beneficiary     Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+
+  // بيانات التابع
+  name             String   // الاسم
+  relationship     String   // صلة القرابة
+  birthDate        String?  // تاريخ الميلاد (YYYY-MM-DD)
+  educationLevel   String   // المستوى الدراسي
+  healthStatus     String   // الحالة الصحية
+  socialStatus     String   // الحالة الاجتماعية (يتيم/إلخ)
+  workStatus       String   // الحالة العملية (طالب/يعمل/عاطل)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DonationPackage {
+  id            Int      @id @default(autoincrement())
+  beneficiaryId Int
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+
+  program String // اسم البرنامج
+  cost    Float  // التكلفة
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FieldPhoto {
+  id            Int      @id @default(autoincrement())
+  beneficiaryId Int
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  photoType     String   // living_room | kitchen | ceiling
+  attachmentId  Int
+  attachment    Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+  sortOrder     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserPermission {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenId      Int
+  screen        Screen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  actions       String[] @default([])
+  deniedActions String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, screenId])
+}
+
+model PlatformSetting {
+  id             Int         @id @default(autoincrement())
+  siteName       String      @default("Moeen Platform")
+  siteNameAr     String      @default("منصة معين")
+  logoId         Int?        @unique
+  logo           Attachment? @relation("PlatformLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  fontFamily     String      @default("Cairo")
+  primaryColor   String      @default("#0A5C4A")
+  secondaryColor String      @default("#F9A826")
+  tertiaryColor  String      @default("#2FAB99")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Governorate {
+  id           Int           @id @default(autoincrement())
+  name         String
+  nameAr       String
+  cities       City[]
+  associations Association[]
+  marketers    Marketer[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model City {
+  id            Int          @id @default(autoincrement())
+  name          String
+  nameAr        String
+  governorateId Int
+  governorate   Governorate  @relation(fields: [governorateId], references: [id])
+  associations  Association[]
+  marketers     Marketer[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model ExportTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  screen    String
+  userId    Int
+  fields    String   // JSON array of field keys in order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([screen, userId, name])
+  @@index([screen, userId])
+}
+
+model Attachment {
+  id           Int       @id @default(autoincrement())
+  name         String
+  originalName String
+  mimetype     String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  checksum     String    @unique
+  data         Bytes?
+  storePath    String?
+  storage      String    @default("db")
+  accessToken  String?
+  resModel     String?
+  resId        Int?
+  resField     String?
+  association                Association?            @relation("AssociationLogo")
+  platformSetting            PlatformSetting?        @relation("PlatformLogo")
+  beneficiaryPhoto           Beneficiary[]           @relation("BeneficiaryPhoto")
+  beneficiaryAddressProof    Beneficiary[]           @relation("BeneficiaryAddressProof")
+  beneficiaryDebtAttachment  Beneficiary[]          @relation("BeneficiaryDebtAttachment")
+  beneficiaryBuildingPhoto   Beneficiary[]           @relation("BeneficiaryBuildingPhoto")
+  fieldPhotos                FieldPhoto[]
+  userAvatar                 User?                   @relation("UserAvatar")
+  marketerImage              Marketer?               @relation("MarketerImage")
+  marketerContract           Marketer?               @relation("MarketerContract")
+  marketerReportAttachment   MarketerMonthlyReport?  @relation("MarketerReportAttachment")
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([resModel, resId])
+  @@index([checksum])
+}
+
+model MarketerMonthlyReport {
+  id           Int         @id @default(autoincrement())
+  marketerId   Int
+  marketer     Marketer    @relation(fields: [marketerId], references: [id], onDelete: Cascade)
+  description  String
+  reportDate   DateTime
+  attachmentId Int?        @unique
+  attachment   Attachment? @relation("MarketerReportAttachment", fields: [attachmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model IncomeAsset {
+  id            Int                        @id @default(autoincrement())
+  nameAr        String
+  nameEn        String
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  beneficiaries IncomeAssetOnBeneficiary[]
+}
+
+model IncomeAssetOnBeneficiary {
+  beneficiaryId  Int
+  incomeAssetId  Int
+  beneficiary    Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  incomeAsset    IncomeAsset @relation(fields: [incomeAssetId], references: [id], onDelete: Cascade)
+
+  @@id([beneficiaryId, incomeAssetId])
+}
+
+model ServiceBill {
+  id            Int                          @id @default(autoincrement())
+  nameAr        String
+  nameEn        String
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+  beneficiaries ServiceBillOnBeneficiary[]
+}
+
+model ServiceBillOnBeneficiary {
+  beneficiaryId  Int
+  serviceBillId  Int
+  beneficiary    Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  serviceBill    ServiceBill @relation(fields: [serviceBillId], references: [id], onDelete: Cascade)
+
+  @@id([beneficiaryId, serviceBillId])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, ARCHIVE, UNARCHIVE
+  screen    String   // e.g. "auth", "associations", "beneficiaries", "marketers", "settings"
+  recordId  Int?
+  details   String?  // JSON summary or description
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([screen])
+  @@index([createdAt])
+}
+
+model MailSetting {
+  id        Int      @id @default(autoincrement())
+  smtp      String   @default("")
+  port      Int      @default(587)
+  secure    Boolean  @default(false)
+  user      String   @default("")
+  password  String   @default("")
+  fromEmail String   @default("")
+  fromName  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailLog {
+  id        Int      @id @default(autoincrement())
+  toEmail   String
+  subject   String
+  status    String   // SUCCESS, FAILED, MOCK
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model MarketingKit {
+  id          Int      @id @default(autoincrement())
+  title       String
+  contentAr   String   @default("")
+  contentEn   String?
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SelectOption {
+  id        Int      @id @default(autoincrement())
+  category  String
+  value     String
+  label     String
+  labelEn   String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, value])
+  @@index([category])
+}
+
+
+
